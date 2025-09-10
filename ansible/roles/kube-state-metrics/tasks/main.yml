@@ -1,0 +1,65 @@
+- name: Déployer kube-state-metrics
+  kubernetes.core.k8s:
+    state: present
+    namespace: monitoring
+    definition: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kube-state-metrics
+        labels:
+          app: kube-state-metrics
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: kube-state-metrics
+        template:
+          metadata:
+            labels:
+              app: kube-state-metrics
+          spec:
+            containers:
+              - name: kube-state-metrics
+                image: bitnami/kube-state-metrics:latest
+                ports:
+                  - containerPort: 8080
+
+- name: Exposer kube-state-metrics via Service
+  kubernetes.core.k8s:
+    state: present
+    namespace: monitoring
+    definition: "{{ lookup('template', 'kube-state-metrics-service.yml.j2') }}"
+
+
+
+
+
+
+# - name: Déployer kube-state-metrics
+#   kubernetes.core.k8s:
+#     state: present
+#     namespace: monitoring
+#     definition: |
+#       apiVersion: apps/v1
+#       kind: Deployment
+#       metadata:
+#         name: kube-state-metrics
+#       spec:
+#         replicas: 1
+#         selector:
+#           matchLabels:
+#             app: kube-state-metrics
+#         template:
+#           metadata:
+#             labels:
+#               app: kube-state-metrics
+#           spec:
+#             containers:
+#               - name: kube-state-metrics
+#                 image: quay.io/coreos/kube-state-metrics:v2.10.0
+#                 ports:
+#                   - name: http-metrics
+#                     containerPort: 8080
+
+

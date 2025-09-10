@@ -1,0 +1,41 @@
+# - name: Déployer MySQL sur GKE
+#   hosts: kubernetes
+#   gather_facts: false
+#   roles:
+#     - mysql
+
+# - name: Déployer WordPress sur GKE
+#   hosts: kubernetes
+#   gather_facts: false
+#   roles:
+#     - wordpress
+
+- name: Installer Prometheus sur VM
+  hosts: prometheus
+  become: yes
+  roles:
+    - prometheus
+
+# - name: Installer Grafana sur VM
+#   hosts: grafana
+#   become: yes
+#   roles:
+#     - grafana
+
+- name: Déployer exporters dans Kubernetes (GKE)
+  hosts: kubernetes
+  gather_facts: false
+  roles:
+    - node-exporter
+    - kube-state-metrics
+    ####### - mysql-exporter
+    - wordpress-exporter
+
+# - name: Déployer exporters dans VM Ansible
+#   hosts: AnsibleVM
+#   gather_facts: false
+#   roles:
+#     - node-exporter
+
+
+

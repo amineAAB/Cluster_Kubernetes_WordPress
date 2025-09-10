@@ -1,0 +1,20 @@
+---
+- name: Créer namespace wordpress si absent
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: wordpress
+    state: present
+
+- name: Déployer WordPress Exporter
+  kubernetes.core.k8s:
+    state: present
+    namespace: wordpress
+    definition: "{{ lookup('template', 'deployment.yml.j2') }}"
+
+- name: Créer Service pour WordPress Exporter
+  kubernetes.core.k8s:
+    state: present
+    namespace: wordpress
+    definition: "{{ lookup('template', 'service.yml.j2') }}"
+

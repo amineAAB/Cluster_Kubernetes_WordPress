@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-exporter
+  namespace: wordpress
+  labels:
+    app: wordpress-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-exporter
+  template:
+    metadata:
+      labels:
+        app: wordpress-exporter
+    spec:
+      containers:
+        - name: wordpress-exporter
+          image: pallavmaheshwari/wordpress-exporter:latest
+          env:
+            - name: WORDPRESS_URI
+              value: "http://wordpress:80"
+          ports:
+            - containerPort: 9100
+

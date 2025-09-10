@@ -45,6 +45,23 @@ resource "local_file" "ansible_private_key" {
   file_permission = "0600"
 }
 
+# ===========================
+# FIREWALL pour Node Exporter
+# ===========================
+resource "google_compute_firewall" "node_exporter_fw" {
+  name    = "node-exporter-firewall"
+  network = google_compute_network.k8s_network.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["9100"] # Port Node Exporter
+  }
+
+  # Autoriser uniquement l’IP publique de Prometheus
+  source_ranges = [format("%s/32", google_compute_instance.prometheus.network_interface[0].access_config[0].nat_ip)]
+
+  target_tags = ["node-exporter"]
+}
 
 # ===========================
 # VM Ansible
@@ -71,7 +88,10 @@ resource "google_compute_instance" "ansible" {
     ssh-keys = "ansible:${file("~/.ssh/id_rsa.pub")}"
   }
 
-  tags = ["ansible"]
+  # On ajoute le tag "node-exporter" pour appliquer le firewall
+  tags = ["ansible", "node-exporter"]
+  # tags = ["ansible"]
+
 }
 
 # ===========================
@@ -114,6 +134,76 @@ resource "google_container_node_pool" "primary_nodes" {
       "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
+}
+
+# ===========================
+# FIREWALL pour Prometheus et Grafana
+# ===========================
+resource "google_compute_firewall" "monitoring_fw" {
+  name    = "monitoring-firewall"
+  network = google_compute_network.k8s_network.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["9090", "3000"] # Prometheus + Grafana
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["monitoring"]
+}
+
+# ===========================
+# VM Prometheus
+# ===========================
+resource "google_compute_instance" "prometheus" {
+  name         = "prometheus-vm"
+  machine_type = "e2-medium" # 2 vCPU, 4GB RAM
+  zone         = "us-central1-a"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 20
+    }
+  }
+
+  network_interface {
+    network    = google_compute_network.k8s_network.name
+    access_config {}
+  }
+
+  metadata = {
+    ssh-keys = "ansible:${file("~/.ssh/id_rsa.pub")}"
+  }
+
+  tags = ["monitoring"]
+}
+
+# ===========================
+# VM Grafana
+# ===========================
+resource "google_compute_instance" "grafana" {
+  name         = "grafana-vm"
+  machine_type = "e2-medium"
+  zone         = "us-central1-a"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 20
+    }
+  }
+
+  network_interface {
+    network    = google_compute_network.k8s_network.name
+    access_config {}
+  }
+
+  metadata = {
+    ssh-keys = "ansible:${file("~/.ssh/id_rsa.pub")}"
+  }
+
+  tags = ["monitoring"]
 }
 
 # ===========================

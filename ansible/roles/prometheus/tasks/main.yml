@@ -1,0 +1,85 @@
+---
+- name: Installer dépendances
+  apt:
+    name: [wget, tar]
+    state: present
+    update_cache: yes
+
+- name: Créer utilisateur prometheus
+  user:
+    name: prometheus
+    shell: /bin/false
+
+- name: Créer dossiers prometheus
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - "{{ prometheus_dir }}"
+    - "{{ prometheus_data_dir }}"
+
+- name: Télécharger Prometheus
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+
+- name: Extraire Prometheus
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+# - name: Installer binaires Prometheus
+#   copy:
+#     src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+#     dest: "/usr/local/bin/{{ item }}"
+#     mode: '0755'
+#   loop:
+#     - prometheus
+#     - promtool
+
+- name: Déplacer binaires Prometheus
+  command: mv /tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }} /usr/local/bin/{{ item }}
+  args:
+    creates: "/usr/local/bin/{{ item }}"
+  loop:
+    - prometheus
+    - promtool
+
+
+- name: Déployer configuration Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_dir }}/prometheus.yml"
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+
+- name: Créer service systemd
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      After=network.target
+
+      [Service]
+      User=prometheus
+      ExecStart=/usr/local/bin/prometheus \
+        --config.file={{ prometheus_dir }}/prometheus.yml \
+        --storage.tsdb.path={{ prometheus_data_dir }} \
+        --web.listen-address=:{{ prometheus_port }}
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Redémarrer Prometheus
+  systemd:
+    name: prometheus
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+
