@@ -13,11 +13,13 @@ Ce projet a pour but d’automatiser la mise en place une application e-commerce
 ##  Architecture déployée
 
 ```mermaid
+
 graph TD
     A[Terraform] -->|Provisionne| B[GCP]
     B --> C[GKE Cluster]
-    B --> D[VM Ansible]
+    B --> D[Ansible]
     C --> E[Worker 1: Pods WordPress]
     C --> F[Worker 2: Pods MySQL + NFS]
+    C --> G[Monitoring Stack: Prometheus & Grafana]
     D -->|Playbooks Ansible| C
 
