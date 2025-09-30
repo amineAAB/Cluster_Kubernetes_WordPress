@@ -1,4 +1,4 @@
-#  Déploiement automatisé d’une application e-commerce WordPress sur Google Kubernetes Engine (GKE) avec Terraform, Ansible et Monitoring
+#  Déploiement automatisé d’une application e-commerce WordPress sur Google Kubernetes Engine (GKE)
 
 ##  Objectif
 Ce projet a pour but d’automatiser la mise en place une application e-commerce **WordPress** avec une base de données **MySQL** sur un cluster GKE hébergé dans **Google Cloud Platform (GCP)**.  
